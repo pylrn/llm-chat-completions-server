@@ -1,0 +1,31 @@
+[project]
+name = "llm-chat-completions-server"
+version = "0.1"
+description = "LLM plugin to serve an OpenAI Chat Completions API endpoint"
+readme = "README.md"
+authors = [{name = "Simon Willison"}]
+license = "Apache-2.0"
+classifiers = []
+requires-python = ">=3.10"
+dependencies = [
+    "llm"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true
+
+[project.urls]
+Homepage = "https://github.com/simonw/llm-chat-completions-server"
+Changelog = "https://github.com/simonw/llm-chat-completions-server/releases"
+Issues = "https://github.com/simonw/llm-chat-completions-server/issues"
+CI = "https://github.com/simonw/llm-chat-completions-server/actions"
+
+[project.entry-points.llm]
+chat_completions_server = "llm_chat_completions_server"
+
+[dependency-groups]
+dev = ["pytest"]

@@ -116,11 +116,13 @@ async def chat_completions(request):
         messages = openai_messages_to_llm(messages_value)
         tools = openai_tools_to_llm(body)
         options, schema = options_and_schema(model, body)
-        legacy_prompt, legacy_system = legacy_prompt_and_system(messages)
+        legacy_system = system_from_messages(messages)
+        messages, prompt, attachments = split_final_user_message(messages)
 
         response = model.prompt(
-            prompt=legacy_prompt,
+            prompt=prompt,
             system=legacy_system,
+            attachments=attachments,
             messages=messages,
             stream=stream,
             tools=tools,
@@ -317,18 +319,35 @@ def content_to_parts(content, param):
     return parts
 
 
-def legacy_prompt_and_system(messages):
+def system_from_messages(messages):
     system_parts = []
-    prompt = None
     for message in messages:
         text = "".join(
             part.text for part in message.parts if isinstance(part, TextPart)
         )
         if message.role == "system" and text:
             system_parts.append(text)
-        elif message.role == "user" and text:
-            prompt = text
-    return prompt, "\n\n".join(system_parts) or None
+    return "\n\n".join(system_parts) or None
+
+
+def split_final_user_message(messages):
+    """Split a trailing user message into (history, prompt, attachments).
+
+    llm's model.prompt() treats messages= as prior history and appends
+    prompt=/attachments= to it as this turn's new user message, so the
+    final user message must move out of the list - left in both places
+    it would be sent to the model and logged twice.
+    """
+    if messages and messages[-1].role == "user" and messages[-1].parts:
+        final = messages[-1]
+        prompt = "".join(
+            part.text for part in final.parts if isinstance(part, TextPart)
+        )
+        attachments = [
+            part.attachment for part in final.parts if isinstance(part, AttachmentPart)
+        ]
+        return messages[:-1], prompt or None, attachments
+    return messages, None, []
 
 
 def attachment_from_url(url):

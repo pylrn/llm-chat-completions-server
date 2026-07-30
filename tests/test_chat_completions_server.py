@@ -370,12 +370,13 @@ def test_completed_responses_are_logged(isolated_llm_user_dir, monkeypatch):
 
     assert response.status_code == 200
     db = sqlite_utils.Database(isolated_llm_user_dir / "logs.db")
-    logged = list(db["responses"].rows)
-    assert len(logged) == 1
-    assert logged[0]["model"] == "async-mock"
-    assert logged[0]["prompt"] == "Log this prompt"
-    assert logged[0]["system"] == "System instructions"
-    assert logged[0]["response"] == "Logged response"
+    turns = list(db["turns"].rows)
+    assert len(turns) == 1
+    assert turns[0]["model"] == "async-mock"
+    search = list(db["turn_search"].rows)
+    assert len(search) == 1
+    assert search[0]["prompt"] == "Log this prompt"
+    assert search[0]["response"] == "Logged response"
     assert db["messages"].count == 3
     assert {row["role"] for row in db["messages"].rows} == {
         "system",
@@ -406,9 +407,12 @@ def test_streamed_responses_are_logged(isolated_llm_user_dir, monkeypatch):
 
     assert response.status_code == 200
     db = sqlite_utils.Database(isolated_llm_user_dir / "logs.db")
-    logged = list(db["responses"].rows)
-    assert len(logged) == 1
-    assert logged[0]["response"] == "Streamed response"
+    turns = list(db["turns"].rows)
+    assert len(turns) == 1
+    search = list(db["turn_search"].rows)
+    assert len(search) == 1
+    assert search[0]["prompt"] == "Stream this"
+    assert search[0]["response"] == "Streamed response"
 
 
 def test_unknown_or_sync_only_model_returns_openai_error(monkeypatch):
